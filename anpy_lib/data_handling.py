@@ -87,7 +87,7 @@ class SQLDataHandler(AbstractDataHandler):
             self.db.execute('INSERT INTO records(cat_id, time_start, time_end) '
                             + 'VALUES (?, ?, ?)',
                             [session.cat_id,
-                             session.time_start,
+                             session.time_start.timestamp(),
                              end.timestamp()])
             self.db.commit()
         else:
@@ -140,7 +140,10 @@ class SQLDataHandler(AbstractDataHandler):
         )
         result = cur.fetchone()
         if result:
-            return Session(*result)
+            return Session(result[0],
+                           result[1],
+                           dt.datetime.fromtimestamp(result[2]),
+                           result[3])
         else:
             return None
 

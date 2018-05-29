@@ -1,3 +1,4 @@
+import datetime as dt
 import sqlite3
 
 from anpy import AbstractDataHandler
@@ -33,20 +34,58 @@ def create_categories(handler: AbstractDataHandler):
             return
 
 
+def prompt_with_default(message, default):
+    print(message)
+    result = input('[Default={}] > '.format(default))
+    if not result:
+        return default
+    return result
+
+
+def prompt_date(defaults: dt.datetime):
+    year = int(prompt_with_default('Please select a year.', defaults.year))
+    month = int(prompt_with_default('Please select a year.', defaults.month))
+    day = int(prompt_with_default('Please select a day.', defaults.day))
+    hour = int(prompt_with_default('Please select hour [24 hour time].',
+                                   defaults.hour))
+    minute = int(prompt_with_default('Please select minute.', defaults.minute))
+    return dt.datetime(year, month, day, hour, minute)
+
+
+def confirm(message):
+    print(message)
+    result = ''
+    while not result or result[0] not in ['y', 'n']:
+        result = input('Y/N: ').lower()
+    return True if result[0] == 'y' else False
+
 def active_session(handler: AbstractDataHandler):
     print()
-    print('The session {} in currently running'.format(
-        handler.get_most_recent_session().name))
-    action = prompt_menu(['Complete', 'Invalidate', 'Quit Program'])
+    session = handler.get_most_recent_session()
+    print('The session {}, started on {}, is currently running.'.format(
+        session.name, session.time_start.strftime('%A at %I:%M %p')))
+    action = prompt_menu(
+        ['Complete', 'Complete and adjust', 'Invalidate', 'Quit Program'])
     if action == 0:
         print('Completed.')
         handler.complete()
     elif action == 1:
+        print('Please enter new completion date.')
+        date = prompt_date(session.time_start)
+        if date < session.time_start:
+            print('Invalid date.')
+        elif confirm('Is {} correct?'.format(date.strftime('%A at %I:%M %p'))):
+            handler.complete(date)
+            print('Completed.')
+        else:
+            print('Cancelled.')
+    elif action == 2:
         print('Canceled.')
         handler.cancel()
-    elif action == 2:
+    elif action == 3:
         print('Exiting...')
         exit()
+
 
 
 def not_active_session(handler: AbstractDataHandler):
@@ -75,7 +114,7 @@ def not_active_session(handler: AbstractDataHandler):
 
 
 if __name__ == '__main__':
-    DATABASE_FILE = 'data.sql'
+    DATABASE_FILE = 'data.db'
     handler = SQLDataHandler(sqlite3.Connection(DATABASE_FILE))
 
     if not handler.get_categories():
