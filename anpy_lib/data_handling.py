@@ -5,8 +5,6 @@ from typing import Optional
 
 from anpy import AbstractDataHandler
 
-DATABASE = 'data.db'
-
 Session = collections.namedtuple('Session',
                                  'cat_id time_start done_or_canceled')
 
@@ -15,29 +13,35 @@ class SQLDataHandler(AbstractDataHandler):
 
     def __init__(self, db: sqlite3.Connection):
         self.db = db
-        self._create_tables(self.db)
+        self._create_tables()
         db.commit()
 
     def new_category(self, name: str):
-        """Create new category with the given name and get the associated id."""
+        """Create new category with the given name and get the associated id.
+
+        The name parameter must be non-empty, else a ValueError will be raised.
+        """
+
+        name = name.strip()
+        if not name:
+            raise ValueError
         probe = self.db.execute(
             'SELECT name FROM categories WHERE name = ? AND active',
             [name]).fetchone()
         if probe:
-            raise AlreadyExistsError('Active category with that name exists')
+            raise RuntimeError('Active category with that name exists')
 
         self.db.execute(
             'INSERT OR REPLACE INTO categories(name) VALUES (?)',
             [name]
         )
         self.db.commit()
-        pass
 
     def set_category_activation(self, cat_id: int, status: bool):
         """Set the active status of the given category to the given state."""
         pass
 
-    def get_categories(self, active_only: bool = True):
+    def get_categories(self, active_only: bool = True) -> dict:
         """Get the categories as a dict from id to name.
 
         If keyword argument active_only is true (default behavior), then only
@@ -58,7 +62,7 @@ class SQLDataHandler(AbstractDataHandler):
         the current instant will be used instead.
         """
         if self.is_active_session():
-            raise AlreadyExistsError('Current session still running')
+            raise RuntimeError('Current session still running')
         self.db.execute('INSERT OR REPLACE INTO current VALUES (?, ?)',
                         [cat_id, datetime])
         self.db.commit()
@@ -94,13 +98,13 @@ class SQLDataHandler(AbstractDataHandler):
 
     def _create_tables(self):
         self.db.execute(
-            'CREATE TABLE IF NOT EXISTS categories(name UNIQUE, active DEFAULT TRUE, cat_id PRIMARY KEY AUTOINCREMENT);'
+            'CREATE TABLE IF NOT EXISTS categories(name UNIQUE, active DEFAULT 1, cat_id INTEGER PRIMARY KEY AUTOINCREMENT);'
         )
         self.db.execute(
-            'CREATE TABLE IF NOT EXISTS current(cat_id, time_start, done_or_canceled DEFAULT FALSE);'
+            'CREATE TABLE IF NOT EXISTS current(cat_id, time_start, done_or_canceled DEFAULT 0);'
         )
         self.db.execute(
-            'CREATE TABLE IF NOT EXISTS records(cat_id, time_start, time_end, ignored DEFAULT FALSE);'
+            'CREATE TABLE IF NOT EXISTS records(cat_id, time_start, time_end, ignored DEFAULT 0);'
         )
         self.db.commit()
 
@@ -122,7 +126,3 @@ class SQLDataHandler(AbstractDataHandler):
             'SELECT cat_id, time_start, done_or_canceled FROM current ORDER BY time_start DESC LIMIT 1'
         )
         return Session(*cur.fetchone())
-
-
-class AlreadyExistsError(RuntimeError):
-    pass

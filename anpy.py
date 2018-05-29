@@ -9,7 +9,10 @@ class AbstractDataHandler(ABC):
 
     @abstractmethod
     def new_category(self, name: str):
-        """Create new category with the given name and get the associated id."""
+        """Create new category with the given name and get the associated id.
+
+        The name parameter must be non-empty, else a ValueError will be raised.
+        """
         pass
 
     @abstractmethod
@@ -18,7 +21,7 @@ class AbstractDataHandler(ABC):
         pass
 
     @abstractmethod
-    def get_categories(self, active_only: bool = True):
+    def get_categories(self, active_only: bool = True) -> dict:
         """Get the categories as a dict from id to name.
 
         If keyword argument active_only is true (default behavior), then only
