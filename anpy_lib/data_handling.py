@@ -1,13 +1,10 @@
-import collections
 import datetime as dt
 import sqlite3
 from typing import Optional
 
 from anpy import AbstractDataHandler
 from anpy import Record
-
-Session = collections.namedtuple('Session',
-                                 'cat_id time_start done_or_canceled')
+from anpy import Session
 
 
 class SQLDataHandler(AbstractDataHandler):
@@ -137,10 +134,9 @@ class SQLDataHandler(AbstractDataHandler):
         return bool(cur.fetchone())
 
     def get_most_recent_session(self):
-        """Return a tuple with the contents from the most recent session"""
         cur = self.db.execute(
-            'SELECT cat_id, time_start, done_or_canceled '
-            + 'FROM beginnings ORDER BY time_start DESC LIMIT 1'
+            'SELECT cat.name, cat.cat_id, b.time_start, b.done_or_canceled '
+            + 'FROM categories AS cat, beginnings as b WHERE cat.cat_id = b.cat_id ORDER BY time_start DESC LIMIT 1'
         )
         result = cur.fetchone()
         if result:

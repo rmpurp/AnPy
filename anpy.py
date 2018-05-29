@@ -5,6 +5,9 @@ import datetime as dt
 from abc import ABC, abstractmethod
 from typing import Optional
 
+Record = collections.namedtuple('Record', 'name cat_id start end')
+Session = collections.namedtuple('Session',
+                                 'name cat_id time_start done_or_canceled')
 
 class AbstractDataHandler(ABC):
 
@@ -75,5 +78,7 @@ class AbstractDataHandler(ABC):
         """
         pass
 
-
-Record = collections.namedtuple('Record', 'name cat_id start end')
+    @abstractmethod
+    def get_most_recent_session(self) -> Session:
+        """Return a tuple with the contents from the most recent session"""
+        pass
