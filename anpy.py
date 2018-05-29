@@ -3,15 +3,18 @@
 import datetime as dt
 from typing import Optional
 
+from anpy_lib import data_handling
+
+db = data_handling.create_database('test.db')
 
 def new_category(name: str):
     """Create a new category with the given name and get the associated id."""
-    pass
+    data_handling.add_category(db, name)
 
 
 def set_category_activation(cat_id: int, status: bool):
     """Set the active status of the given category to the given state."""
-    pass
+    raise NotImplemented
 
 
 def get_categories(active_only: bool = True):
@@ -21,7 +24,7 @@ def get_categories(active_only: bool = True):
     categories that are marked active are returned. Otherwise all of them,
     including inactive ones, are returned.
     """
-    pass
+    return data_handling.get_categories(db)
 
 
 def start(cat_id: int, datetime: Optional[dt.datetime] = None):
@@ -30,23 +33,23 @@ def start(cat_id: int, datetime: Optional[dt.datetime] = None):
     If there is no datetime object passed in, the datetime associated with the
     current instant will be used instead.
     """
-    pass
+    data_handling.start(db, cat_id, datetime)
 
 
 def cancel():
     """Cancel the current working session that is running"""
-    pass
+    data_handling.mark_done_or_cancel(db)
 
 
-def stop(datetime: dt.datetime = None):
+def complete(datetime: dt.datetime = None):
     """Record the end of a current working session.
 
     If there is no datetime object passed in, the datetime associated with the
     current instant will be used instead.
     """
-    pass
+    data_handling.complete(db, datetime)
 
 
 def rename_category(cat_id: int, name: str):
     """Change the name of the category associated with the given id"""
-    pass
+    raise NotImplemented
