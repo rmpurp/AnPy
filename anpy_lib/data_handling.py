@@ -63,6 +63,10 @@ class SQLDataHandler(AbstractDataHandler):
 
         if self.is_active_session():
             raise RuntimeError('Current session still running')
+
+        if cat_id not in self.get_categories().values():
+            raise ValueError('Given ID does not exist.')
+
         self.db.execute('INSERT OR REPLACE INTO beginnings(cat_id, time_start) '
                         + 'VALUES (?, ?)', [cat_id, start.timestamp()])
         self.db.commit()

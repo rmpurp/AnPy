@@ -94,6 +94,9 @@ class DataInputOutputTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             handler.complete()
 
+        with self.assertRaises(ValueError):
+            handler.start(-5, dt.datetime.now())
+
         handler.start(categories['AP Bio'], start)
         self.assertTrue(handler.is_active_session())
 

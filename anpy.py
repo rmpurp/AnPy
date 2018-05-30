@@ -1,13 +1,22 @@
 #!/usr/bin/env python
 
-import collections
 import datetime as dt
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, NamedTuple
 
-Record = collections.namedtuple('Record', 'name cat_id start end')
-Session = collections.namedtuple('Session',
-                                 'name cat_id time_start done_or_canceled')
+
+class Record(NamedTuple):
+    name: str
+    cat_id: int
+    start: dt.datetime
+    end: dt.datetime
+
+
+class Session(NamedTuple):
+    name: str
+    cat_id: int
+    time_start: dt.datetime
+    done_or_canceled: bool
 
 class AbstractDataHandler(ABC):
 
