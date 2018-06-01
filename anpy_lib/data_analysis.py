@@ -1,5 +1,5 @@
 import datetime as dt
-from typing import List, Iterable, NamedTuple
+from typing import List, Iterable, NamedTuple, Dict
 
 from anpy import AbstractDataHandler
 from anpy import Record
@@ -29,13 +29,15 @@ def get_records_on_week(handler: AbstractDataHandler,
     return records
 
 
-def get_subject_breakdown(records: Iterable[Record]):
+def get_total_subject_breakdown(list_of_records: List[Iterable[Record]]):
+    dicts = [get_subject_breakdown(r) for r in list_of_records]
+    return dicts
+
+
+def get_subject_breakdown(records: Iterable[Record]) -> Dict[str, float]:
     record_dict = dict()
     for record in records:
         seconds = (record.end - record.start).total_seconds()
-        record_dict[(record.name, record.cat_id)] = record_dict.get(
-            (record.name, record.cat_id), 0) + seconds
-    result = []
-    for (name, id), value in record_dict.items():
-        result.append(DailyStat(name, id, value))
-    return result
+        record_dict[record.name] = record_dict.get(
+            record.name, 0) + seconds
+    return record_dict
