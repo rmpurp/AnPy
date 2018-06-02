@@ -1,7 +1,10 @@
+import configparser
 import datetime as dt
+import os
 import sqlite3
 
 from anpy import AbstractDataHandler
+from anpy_lib import data_entry
 from anpy_lib.data_handling import SQLDataHandler
 
 
@@ -59,7 +62,8 @@ def confirm(message):
         result = input('Y/N: ').lower()
     return True if result[0] == 'y' else False
 
-def active_session(handler: AbstractDataHandler):
+
+def active_session(handler: AbstractDataHandler, path):
     print()
     session = handler.get_most_recent_session()
     print('The session {}, started on {}, is currently running.'.format(
@@ -87,12 +91,11 @@ def active_session(handler: AbstractDataHandler):
         exit()
 
 
-
-def not_active_session(handler: AbstractDataHandler):
+def not_active_session(handler: AbstractDataHandler, path):
     print()
     action = prompt_menu(
-        ['Start Session', 'Add Categories', 'Archive Categories',
-         'Quit Program'])
+        ['Start Session', 'Add Categories', 'Rename Category',
+         'Archive Categories', 'Export to Excel', 'Quit Program'])
     if action == 0:
         category_dict = handler.get_categories()
         categories = list(category_dict.keys())
@@ -108,20 +111,61 @@ def not_active_session(handler: AbstractDataHandler):
     elif action == 2:
         print('Not implemented yet')
         return
+    elif action == 3:
+        print('Not implemented yet')
+        return
+    elif action == 4:
+        wb = data_entry.load_excel_workbook(path)
+        ws, date = data_entry.get_relevant_worksheet(wb, None)
+        data_entry.enter_week_data(date, handler, ws)
+        wb.save(path)
+        print('Exported.\n')
     else:
         print('Exiting...')
         exit()
 
 
+def create_config(path):
+    config = configparser.ConfigParser()
+    excel_path = input('Please enter path to write Excel file')
+    if os.path.isdir(excel_path):
+        excel_path = os.path.join(excel_path, 'log.xlsx')
+    elif not (excel_path.endswith('.xlsx') or excel_path.endswith('.xlsm')):
+        excel_path += '.xlsx'
+    config['Paths'] = {'LogFile': excel_path}
+    with open(path, 'w') as config_file:
+        config.write(config_file)
+
+
+def get_path(path):
+    if not os.path.exists(path):
+        create_config(path)
+    config = configparser.ConfigParser()
+    config.read(path)
+    if 'Paths' not in config.sections():
+        print('Invalid config file.')
+        create_config(path)
+        get_path(path)
+    elif 'LogFile' not in config['Paths']:
+        print('Invalid config file.')
+        create_config(path)
+        get_path(path)
+    else:
+        return config['Paths']['LogFile']
+
+
 if __name__ == '__main__':
     DATABASE_FILE = 'data.db'
+    CONFIG_FILE = 'config.ini'
     handler = SQLDataHandler(sqlite3.Connection(DATABASE_FILE))
 
     if not handler.get_categories():
         create_categories(handler)
 
+    path = get_path(CONFIG_FILE)
+
     while True:
         if handler.is_active_session():
-            active_session(handler)
+            active_session(handler, path)
         else:
-            not_active_session(handler)
+            not_active_session(handler, path)

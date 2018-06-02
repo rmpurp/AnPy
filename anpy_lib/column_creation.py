@@ -2,7 +2,6 @@
 
 import itertools as it
 
-from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.cell_range import CellRange
 
@@ -242,36 +241,3 @@ def get_subjects(ws, num_titles):
         cell = ws.cell(row=1, column=index)
     return subjects
 
-
-def create_stat_columns(columns=None, date=None):
-    if not columns:
-        columns = DEFAULT_COLUMNS
-    for C in columns:
-        if C == DateColumn:
-            C(date)
-        else:
-            C()
-
-
-def create_subjects(subjects):
-    """Initialize subject columns, but not make them
-
-    arguments:
-    subjects -- iterable containing subjects as strings
-    """
-    for s in subjects:
-        DataColumn(s)
-
-
-if __name__ == '__main__':
-    wb = Workbook()
-    ws = wb.active
-
-    subjects = ['AP Euro', 'AP Bio', 'Band', 'Dab', 'dab2']
-
-    create_stat_columns()
-    create_subjects(subjects)
-    Column.make_all(ws)
-    print(Column.get_column_strings())
-
-    wb.save('test.xlsx')

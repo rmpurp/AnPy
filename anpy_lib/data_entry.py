@@ -2,11 +2,13 @@ import datetime as dt
 import sqlite3
 from typing import List, Iterable, Dict, Optional
 
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 
 from anpy import AbstractDataHandler
 from anpy import Record
 from anpy_lib import column_creation as cc, data_handling, data_analysis
+
+TEMP_SHEET_NAME = 'ANPY_TEMP_SHEET_DO_NOT_TOUCH'
 
 
 def enter_week_data(first: dt.datetime, handler: AbstractDataHandler, ws):
@@ -60,6 +62,36 @@ def get_data_column_data(dicts: List[Dict[str, float]]) \
             return_dict[subject][idx] = time
 
     return return_dict
+
+
+def get_most_recent_monday(datetime: dt.datetime = None):
+    if not datetime:
+        datetime = dt.datetime.today()
+    datetime = datetime - dt.timedelta(hours=6)
+    datetime = datetime - dt.timedelta(days=datetime.isoweekday())
+    return dt.datetime.combine(datetime.date(), dt.time(6, 0))
+
+
+def load_excel_workbook(path):
+    try:
+        wb = load_workbook(path)
+    except FileNotFoundError:
+        wb = Workbook()
+        wb.active.title = TEMP_SHEET_NAME
+    return wb
+
+
+def get_relevant_worksheet(workbook: Workbook, datetime=None):
+    reference_date = str(get_most_recent_monday(datetime).date())
+    if reference_date not in workbook.sheetnames:
+        workbook.create_sheet(title=reference_date)
+    else:
+        workbook[reference_date].title = TEMP_SHEET_NAME
+        workbook.create_sheet(title=reference_date)
+
+    if TEMP_SHEET_NAME in workbook.sheetnames:
+        del workbook[TEMP_SHEET_NAME]
+    return workbook[reference_date], get_most_recent_monday(datetime)
 
 
 if __name__ == '__main__':
