@@ -21,8 +21,7 @@ class DataInputOutputTest(unittest.TestCase):
         start = dt.datetime(2002, 4, 6, 5, 6)
         handler = SQLDataHandler(sqlite3.Connection(DATABASE_PATH))
         handler.new_category('Test')
-        categories = handler.get_categories()
-        handler.start(categories['Test'], start)
+        handler.start('Test', start)
         self.assertTrue(handler.is_active_session())
         handler.cancel()
         self.assertFalse(handler.is_active_session())
@@ -43,17 +42,15 @@ class DataInputOutputTest(unittest.TestCase):
         for cat in categories:
             handler.new_category(cat)
 
-        categories = handler.get_categories()
-
-        handler.start(categories['AP Chem'], start1)
+        handler.start('AP Chem', start1)
         self.assertTrue(handler.is_active_session())
         with self.assertRaises(RuntimeError):
-            handler.start(categories['Biology 101'])
+            handler.start('Biology 101')
         handler.complete(end1)
 
         self.assertFalse(handler.is_active_session())
 
-        handler.start(categories['Biology 101'], start2)
+        handler.start('Biology 101', start2)
         self.assertTrue(handler.is_active_session())
         handler.complete(end2)
 
@@ -69,8 +66,8 @@ class DataInputOutputTest(unittest.TestCase):
                       dt.datetime(2010, 1, 1, 13, 14),
                       dt.datetime(2010, 1, 1, 13, 10)]
 
-        er1 = Record('AP Chem', categories['AP Chem'], start1, end1)
-        er2 = Record('Biology 101', categories['Biology 101'], start2, end2)
+        er1 = Record('AP Chem', start1, end1)
+        er2 = Record('Biology 101', start2, end2)
 
         expecteds = [[er1], [er1, er2], [er2], []]
 
@@ -89,15 +86,13 @@ class DataInputOutputTest(unittest.TestCase):
         for cat in categories:
             handler.new_category(cat)
 
-        categories = handler.get_categories()
-
         with self.assertRaises(RuntimeError):
             handler.complete()
 
         with self.assertRaises(ValueError):
             handler.start(-5, dt.datetime.now())
 
-        handler.start(categories['AP Bio'], start)
+        handler.start('AP Bio', start)
         self.assertTrue(handler.is_active_session())
 
         handler.complete(end)
@@ -115,7 +110,7 @@ class DataInputOutputTest(unittest.TestCase):
                       dt.datetime(2015, 4, 5, 2, 30),
                       dt.datetime(2015, 4, 5, 4, 00)]
 
-        expected_record = Record('AP Bio', categories['AP Bio'], start, end)
+        expected_record = Record('AP Bio', start, end)
         successful_findings = [False, False, True, True, False]
 
         for rb, re, sf in zip(range_begins, range_ends, successful_findings):
@@ -131,16 +126,15 @@ class DataInputOutputTest(unittest.TestCase):
         categories = 'AP Bio,AP Chem,Physics 2,Biology 101,CS 61A'.split(',')
         for subject in categories:
             handler.new_category(subject)
-        categories = handler.get_categories()
-        handler.set_category_activation(categories['AP Bio'], False)
-        handler.set_category_activation(categories['CS 61A'], False)
+        handler.set_category_activation('AP Bio', False)
+        handler.set_category_activation('CS 61A', False)
         expected = [False, True, True, True, False]
-        active_categories = handler.get_categories().keys()
+        active_categories = handler.active_categories
         for e, cat in zip(expected, categories):
             with self.subTest(e=e, cat=cat):
                 self.assertEqual(cat in active_categories, e, cat)
 
-        all_categories = handler.get_categories(False).keys()
+        all_categories = handler.all_categories
         for cat in categories:
             with self.subTest(cat=cat):
                 self.assertTrue(cat in all_categories)
@@ -153,42 +147,36 @@ class DataInputOutputTest(unittest.TestCase):
         handler.new_category('AP Bio')
         handler.new_category('AP French')
         handler.new_category('CS 50')
-        categories = handler.get_categories()
-        bio_id = categories['AP Bio']
-        handler.rename_category(bio_id, 'AP Biology')
-        categories = handler.get_categories()
+        handler.rename_category('AP Bio', 'AP Biology')
+        categories = handler.active_categories
 
-        self.assertTrue('AP Biology' in categories.keys())
+        self.assertTrue('AP Biology' in categories)
 
-        self.assertEquals(bio_id, categories['AP Biology'])
-
-        self.assertFalse('AP Bio' in categories.keys())
-        self.assertTrue('AP French' in categories.keys())
-        self.assertTrue('CS 50' in categories.keys())
+        self.assertFalse('AP Bio' in categories)
+        self.assertTrue('AP French' in categories)
+        self.assertTrue('CS 50' in categories)
 
         with self.assertRaises(ValueError):
-            handler.rename_category(-1, 'banana')
-
-
+            handler.rename_category('apple', 'banana')
 
     def test_category_persistence(self):
         handler = SQLDataHandler(sqlite3.Connection(DATABASE_PATH))
-        self.assertEqual(handler.get_categories(), dict())
+        self.assertEqual(handler.active_categories, ())
 
         handler = SQLDataHandler(sqlite3.Connection(DATABASE_PATH))
-        self.assertEqual(handler.get_categories(), dict())
+        self.assertEqual(handler.active_categories, ())
 
         categories = 'AP Bio,AP Chem,Physics 2,Biology 101,CS 61A'.split(',')
         for subject in categories:
             handler.new_category(subject)
-        self.assertEqual(set(handler.get_categories().keys()), set(categories))
+        self.assertEqual(set(handler.active_categories), set(categories))
 
         handler = SQLDataHandler(sqlite3.Connection(DATABASE_PATH))
-        self.assertEqual(set(handler.get_categories().keys()), set(categories))
+        self.assertEqual(set(handler.active_categories), set(categories))
 
     def test_category_creation(self):
         handler = SQLDataHandler(sqlite3.Connection(DATABASE_PATH))
-        self.assertEqual(handler.get_categories(), dict())
+        self.assertEqual(handler.active_categories, ())
         with self.assertRaises(ValueError):
             handler.new_category('')
 
@@ -198,7 +186,7 @@ class DataInputOutputTest(unittest.TestCase):
             with self.subTest(subject=subject):
                 handler.new_category(subject)
                 added_categories.add(subject)
-                self.assertEqual(set(handler.get_categories().keys()),
+                self.assertEqual(set(handler.active_categories),
                                  added_categories)
 
         with self.assertRaises(ValueError):
@@ -207,10 +195,10 @@ class DataInputOutputTest(unittest.TestCase):
             with self.subTest(subject=subject):
                 with self.assertRaises(RuntimeError):
                     handler.new_category(subject)
-        self.assertEqual(set(handler.get_categories().keys()), added_categories)
+        self.assertEqual(set(handler.active_categories), added_categories)
 
         handler.new_category('    decal     \t')
-        self.assertTrue('decal' in handler.get_categories().keys())
+        self.assertTrue('decal' in handler.active_categories)
 
 
 if __name__ == '__main__':
