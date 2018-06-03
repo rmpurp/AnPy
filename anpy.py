@@ -2,49 +2,49 @@
 
 import datetime as dt
 from abc import ABC, abstractmethod
-from typing import Optional, NamedTuple
+from typing import Optional, NamedTuple, Tuple
 
 
 class Record(NamedTuple):
     name: str
-    cat_id: int
     start: dt.datetime
     end: dt.datetime
 
 
 class Session(NamedTuple):
     name: str
-    cat_id: int
     time_start: dt.datetime
     done_or_canceled: bool
 
-class AbstractDataHandler(ABC):
 
+class AbstractDataHandler(ABC):
     @abstractmethod
     def new_category(self, name: str):
-        """Create new category with the given name and get the associated id.
+        """Create new category with the given name.
 
         The name parameter must be non-empty, else a ValueError will be raised.
         """
         pass
 
     @abstractmethod
-    def set_category_activation(self, cat_id: int, status: bool):
+    def set_category_activation(self, name: str, status: bool):
         """Set the active status of the given category to the given state."""
         pass
 
+    @property
     @abstractmethod
-    def get_categories(self, active_only: bool = True) -> dict:
-        """Get the categories as a dict from name to id.
+    def active_categories(self) -> Tuple[str]:
+        """Get the active categories as a tuple."""
+        pass
 
-        If keyword argument active_only is true (default behavior), then only
-        the categories that are marked active are returned. Otherwise all of
-        them, including inactive ones, are returned.
-        """
+    @property
+    @abstractmethod
+    def all_categories(self) -> Tuple[str]:
+        """Get all categories, including inactive ones, as a list."""
         pass
 
     @abstractmethod
-    def start(self, cat_id: int, start: Optional[dt.datetime] = None):
+    def start(self, name: str, start: Optional[dt.datetime] = None):
         """Record the beginning of a working session.
 
         If there is no datetime object passed in, the datetime associated with
@@ -81,13 +81,13 @@ class AbstractDataHandler(ABC):
         pass
 
     @abstractmethod
-    def rename_category(self, cat_id: int, new_name: str):
-        """Change the name of the category associated with the given id.
+    def rename_category(self, old_name: str, new_name: str):
+        """Change the name of the category.
 
         """
         pass
 
     @abstractmethod
     def get_most_recent_session(self) -> Session:
-        """Return a tuple with the contents from the most recent session"""
+        """Return a namedtuple with the contents from the most recent session"""
         pass
