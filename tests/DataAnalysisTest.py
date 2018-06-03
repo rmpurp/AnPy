@@ -26,12 +26,12 @@ class DataAnalysisTest(unittest.TestCase):
         for s in subjects:
             handler.new_category(s)
 
-        categories = handler.get_categories()
+        categories = handler.active_categories
 
         start_date = dt.datetime(2000, 5, 1, 4, 30)
 
-        for i in range(1000):
-            handler.start(random.choice(list(categories.values())), start_date)
+        for i in range(500):
+            handler.start(random.choice(list(categories)), start_date)
             duration = dt.timedelta(seconds=random.randint(30, 60) * 60)
             handler.complete(start_date + duration)
             advance = dt.timedelta(seconds=random.randint(0, 60) * 60)
@@ -74,9 +74,8 @@ class DataAnalysisTest(unittest.TestCase):
         starts = [start0, start1, start2, start3]
         ends = [end0, end1, end2, end3]
 
-        categories = handler.get_categories()
-        cats = [categories['a'], categories['c'], categories['a'],
-                categories['a']]
+        categories = handler.active_categories
+        cats = 'a c a a'.split(' ')
 
         for c, s, e in zip(cats, starts, ends):
             handler.start(c, s)
@@ -90,15 +89,14 @@ class DataAnalysisTest(unittest.TestCase):
         self.assertEqual(len(day_two_stats), 3)
         self.assertEqual(len(day_three_stats), 0)
 
-        record_0 = Record('a', categories['a'], start0, end0)
-        record_1 = Record('c', categories['c'], start1, end1)
-        record_2 = Record('a', categories['a'], start2, end2)
-        record_3 = Record('a', categories['a'], start3, end3)
+        record_0 = Record('a', start0, end0)
+        record_1 = Record('c', start1, end1)
+        record_2 = Record('a', start2, end2)
+        record_3 = Record('a', start3, end3)
 
-        day1_a_stat = data_analysis.DailyStat('a', categories['a'], 7 * 3600)
-        day2_c_stat = data_analysis.DailyStat('c', categories['c'], 3600)
-        day2_a_stat = data_analysis.DailyStat('a', categories['a'],
-                                              30 * 60 + 7 * 3600)
+        day1_a_stat = data_analysis.DailyStat('a', 7 * 3600)
+        day2_c_stat = data_analysis.DailyStat('c', 3600)
+        day2_a_stat = data_analysis.DailyStat('a', 30 * 60 + 7 * 3600)
 
         self.assertEqual(day_one_stats[0], record_0)
         self.assertEqual(day_two_stats[0], record_1)

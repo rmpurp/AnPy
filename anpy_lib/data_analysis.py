@@ -9,7 +9,6 @@ DAYS_IN_A_WEEK = 7
 
 class DailyStat(NamedTuple):
     name: str
-    cat_id: int
     seconds_working: float
 
 
