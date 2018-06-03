@@ -94,10 +94,6 @@ class DataAnalysisTest(unittest.TestCase):
         record_2 = Record('a', start2, end2)
         record_3 = Record('a', start3, end3)
 
-        day1_a_stat = data_analysis.DailyStat('a', 7 * 3600)
-        day2_c_stat = data_analysis.DailyStat('c', 3600)
-        day2_a_stat = data_analysis.DailyStat('a', 30 * 60 + 7 * 3600)
-
         self.assertEqual(day_one_stats[0], record_0)
         self.assertEqual(day_two_stats[0], record_1)
         self.assertEqual(day_two_stats[1], record_2)

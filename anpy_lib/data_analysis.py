@@ -1,15 +1,10 @@
 import datetime as dt
-from typing import List, Iterable, NamedTuple, Dict
+from typing import List, Iterable, Dict
 
 from anpy import AbstractDataHandler
 from anpy import Record
 
 DAYS_IN_A_WEEK = 7
-
-
-class DailyStat(NamedTuple):
-    name: str
-    seconds_working: float
 
 
 def get_records_on_day(handler: AbstractDataHandler,
@@ -28,12 +23,13 @@ def get_records_on_week(handler: AbstractDataHandler,
     return records
 
 
-def get_total_subject_breakdown(list_of_records: List[Iterable[Record]]):
-    dicts = [get_subject_breakdown(r) for r in list_of_records]
+def get_total_subject_breakdown(list_of_records: List[Iterable[Record]]) \
+        -> List[Dict[str, float]]:
+    dicts = [get_per_category_durations(r) for r in list_of_records]
     return dicts
 
 
-def get_subject_breakdown(records: Iterable[Record]) -> Dict[str, float]:
+def get_per_category_durations(records: Iterable[Record]) -> Dict[str, float]:
     record_dict = dict()
     for record in records:
         seconds = (record.end - record.start).total_seconds()

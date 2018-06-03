@@ -36,7 +36,8 @@ class Column:
         for row, item in enumerate(self._get_body(NUM_BODY_ITEMS), 2):
             cell = ws.cell(row=row, column=self.column, value=item)
             self._body_cell_op(cell)
-        ws.cell(row=row + 1, column=self.column, value=self._get_footer())
+        fc = ws.cell(row=row + 1, column=self.column, value=self._get_footer())
+        self._footer_body_op(fc)
 
     def _get_body_item(self, item_num):
         '''Get the item_num-th body item'''
@@ -50,6 +51,9 @@ class Column:
         Args:
             cell: the body cell that was just created
         '''
+        pass
+
+    def _footer_body_op(self, cell):
         pass
 
     def _get_body(self, num_items):
@@ -128,6 +132,9 @@ class CategoryTimeColumn(DataColumn):
     def _body_cell_op(self, cell):
         cell.number_format = '0'
 
+    def _footer_body_op(self, cell):
+        cell.number_format = '0'
+
 
 class TimeStartedColumn(DataColumn):
     def __init__(self, data, default_value='N/A'):
@@ -170,6 +177,9 @@ class TimeTotalColumn(Column):
     def _body_cell_op(self, cell):
         cell.number_format = '0.0'
 
+    def _footer_body_op(self, cell):
+        cell.number_format = '0.0'
+
 
 class TimeWorkingColumn(Column):
     def __init__(self):
@@ -188,6 +198,9 @@ class TimeWorkingColumn(Column):
         return template.format(cell_range)
 
     def _body_cell_op(self, cell):
+        cell.number_format = '0.0'
+
+    def _footer_body_op(self, cell):
         cell.number_format = '0.0'
 
 
@@ -222,13 +235,8 @@ class EfficiencyColumn(Column):
     def _body_cell_op(self, cell):
         cell.number_format = '0.0%'
 
-
-DEFAULT_COLUMNS = [DateColumn,
-                   TimeStartedColumn,
-                   TimeEndedColumn,
-                   TimeTotalColumn,
-                   TimeWorkingColumn,
-                   EfficiencyColumn]
+    def _footer_body_op(self, cell):
+        cell.number_format = '0.0%'
 
 
 def get_subjects(ws, num_titles):

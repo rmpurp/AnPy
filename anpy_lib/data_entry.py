@@ -1,20 +1,19 @@
 import datetime as dt
-import sqlite3
 from typing import List, Iterable, Dict, Optional
 
 from openpyxl import Workbook, load_workbook
 
 from anpy import AbstractDataHandler
 from anpy import Record
-from anpy_lib import column_creation as cc, data_handling, data_analysis
+from anpy_lib import column_creation as cc, data_analysis
 
 TEMP_SHEET_NAME = 'ANPY_TEMP_SHEET_DO_NOT_TOUCH'
 
 
 def enter_week_data(first: dt.datetime, handler: AbstractDataHandler, ws):
     weekly_record_list = data_analysis.get_records_on_week(handler, first)
-
-    dicts = data_analysis.get_total_subject_breakdown(weekly_record_list)
+    dicts = [data_analysis.get_per_category_durations(r) for r in
+             weekly_record_list]
     make_cols(first, weekly_record_list, dicts)
     cc.Column.make_all(ws)
 
@@ -67,8 +66,8 @@ def get_data_column_data(dicts: List[Dict[str, float]]) \
 def get_most_recent_monday(datetime: dt.datetime = None):
     if not datetime:
         datetime = dt.datetime.today()
-    datetime = datetime - dt.timedelta(hours=6)
-    datetime = datetime - dt.timedelta(days=datetime.isoweekday())
+    datetime = datetime - dt.timedelta(hours=6) + dt.timedelta.resolution
+    datetime = datetime - dt.timedelta(days=datetime.isoweekday() - 1)
     return dt.datetime.combine(datetime.date(), dt.time(6, 0))
 
 
@@ -92,22 +91,3 @@ def get_relevant_worksheet(workbook: Workbook, datetime=None):
     if TEMP_SHEET_NAME in workbook.sheetnames:
         del workbook[TEMP_SHEET_NAME]
     return workbook[reference_date], get_most_recent_monday(datetime)
-
-
-if __name__ == '__main__':
-    a = Workbook()
-    ws = a.active
-    h = data_handling.SQLDataHandler(sqlite3.Connection('test.db'))
-    h.new_category('a')
-    h.new_category('b')
-    h.new_category('c')
-    cats = h.get_categories()
-    h.start(cats['a'], dt.datetime(2015, 3, 3, 8, 30))
-    h.complete(dt.datetime(2015, 3, 3, 10, 0))
-    h.start(cats['a'], dt.datetime(2015, 3, 3, 13, 0))
-    h.complete(dt.datetime(2015, 3, 3, 15, 0))
-    h.start(cats['b'], dt.datetime(2015, 3, 4, 14, 0))
-    h.complete(dt.datetime(2015, 3, 4, 15, 0))
-
-    enter_week_data(dt.datetime(2015, 2, 28, 6, 0), h, ws)
-    a.save('done.xlsx')
