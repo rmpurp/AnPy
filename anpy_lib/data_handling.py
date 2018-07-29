@@ -40,13 +40,13 @@ class SQLDataHandler(AbstractDataHandler):
     @property
     def all_categories(self) -> Tuple[str]:
         cur = self.db.execute('SELECT name FROM categories')
-        return tuple(tup[0] for tup in cur.fetchall())
+        return tuple(str(tup[0]) for tup in cur.fetchall())
 
     @property
     def active_categories(self) -> Tuple[str]:
         cur = self.db.execute(
             'SELECT name FROM categories WHERE active')
-        return tuple(tup[0] for tup in cur.fetchall())
+        return tuple(str(tup[0]) for tup in cur.fetchall())
 
     def start(self, name: str, start: Optional[dt.datetime] = None):
         """Record the beginning of a working session.
@@ -82,8 +82,8 @@ class SQLDataHandler(AbstractDataHandler):
             end = dt.datetime.now()
 
         if self.is_active_session():
-            self._mark_done_or_cancel()
             session = self.get_most_recent_session()
+            self._mark_done_or_cancel()
             self.db.execute('INSERT INTO records(name, time_start, time_end) '
                             + 'VALUES (?, ?, ?)',
                             [session.name,
@@ -121,9 +121,10 @@ class SQLDataHandler(AbstractDataHandler):
         cur = self.db.execute(
             'SELECT ROWID FROM beginnings ORDER BY time_start DESC LIMIT 1')
         row = cur.fetchone()[0]
-        self.db.execute(
-            'UPDATE beginnings SET done_or_canceled = 1 WHERE ROWID = ?',
-            [row])
+        self.db.execute('DELETE FROM beginnings')
+        # self.db.execute(
+        #    'UPDATE beginnings SET done_or_canceled = 1 WHERE ROWID = ?',
+        #    [row])
         self.db.commit()
 
     def is_active_session(self):
@@ -138,10 +139,11 @@ class SQLDataHandler(AbstractDataHandler):
             + 'FROM categories AS cat, beginnings as b WHERE cat.name = b.name ORDER BY time_start DESC LIMIT 1'
         )
         result = cur.fetchone()
+
         if result:
             return Session(result[0],
                            dt.datetime.fromtimestamp(result[1]),
-                           result[2])
+                           bool(result[2]))
         else:
             return None
 

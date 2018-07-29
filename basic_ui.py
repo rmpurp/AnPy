@@ -3,8 +3,12 @@ import datetime as dt
 import os
 import sqlite3
 
+from tabulate import tabulate
+
 from anpy import AbstractDataHandler
 from anpy_lib import data_entry
+from anpy_lib import file_management
+from anpy_lib import table_generator
 from anpy_lib.data_handling import SQLDataHandler
 
 
@@ -69,12 +73,13 @@ def active_session(handler: AbstractDataHandler, path):
     print('The session {}, started on {}, is currently running.'.format(
         session.name, session.time_start.strftime('%A at %I:%M %p')))
     action = prompt_menu(
-        ['Complete', 'Complete and adjust', 'Invalidate', 'Quit Program'])
+        ['Complete', 'Complete and adjust', 'Adjust Start Time', 'Invalidate',
+         'Quit Program'])
     if action == 0:
         print('Completed.')
         handler.complete()
     elif action == 1:
-        print('Please enter new completion date.')
+        print('Please enter new completion date and time.')
         date = prompt_date(session.time_start)
         if date < session.time_start:
             print('Invalid date.')
@@ -84,9 +89,16 @@ def active_session(handler: AbstractDataHandler, path):
         else:
             print('Cancelled.')
     elif action == 2:
+        print('Please enter new start date and time.')
+        date = prompt_date(session.time_start)
+        if confirm('Is {} correct?'.format(date.strftime('%A at %I:%M %p'))):
+            cat = handler.get_most_recent_session().name
+            handler.cancel()
+            handler.start(cat, date)
+    elif action == 3:
         print('Canceled.')
         handler.cancel()
-    elif action == 3:
+    elif action == 4:
         print('Exiting...')
         exit()
 
@@ -148,25 +160,10 @@ def clean_excel_file(excel_path):
     return excel_path
 
 
-def get_path(path):
-    if not os.path.exists(path):
-        create_config(path)
-    config = configparser.ConfigParser()
-    config.read(path)
-    if 'Paths' not in config.sections():
-        print('Invalid config file.')
-        create_config(path)
-        get_path(path)
-    elif 'LogFile' not in config['Paths']:
-        print('Invalid config file.')
-        create_config(path)
-        get_path(path)
-    else:
-        return config['Paths']['LogFile']
-
-
 def get_input(message, default=None, key=None, validate=None):
     # Validate is a function that validates the input
+    # key is a function whose result replaces the input when being validated
+    # and/or returned
     if key is None:
         key = lambda x: x
     if validate is None:
@@ -211,17 +208,41 @@ def get_datetime(default: dt.datetime) -> dt.datetime:
     return dt.datetime.combine(date, time)
 
 
+def get_path(path):
+    if not os.path.exists(path):
+        create_config(path)
+    config = configparser.ConfigParser()
+    config.read(path)
+    if 'Paths' not in config.sections():
+        print('Invalid config file.')
+        create_config(path)
+        get_path(path)
+    elif 'LogFile' not in config['Paths']:
+        print('Invalid config file.')
+        create_config(path)
+        get_path(path)
+    else:
+        return config['Paths']['LogFile']
+
+
 prompt_date = get_datetime
 
 if __name__ == '__main__':
-    DATABASE_FILE = 'data.db'
-    CONFIG_FILE = 'config.ini'
-    handler = SQLDataHandler(sqlite3.Connection(DATABASE_FILE))
+    # DATABASE_FILE = 'data.db'
+    # CONFIG_FILE = 'config.ini'
+    file_management.create_anpy_dir_if_not_exist()
+    handler = SQLDataHandler(sqlite3.Connection(file_management.DATABASE_PATH))
 
     if not handler.active_categories:
         create_categories(handler)
 
-    path = get_path(CONFIG_FILE)
+    path = get_path(file_management.CONFIG_PATH)
+
+    table, headers = table_generator.create_table_iterable_and_headers(
+        data_handler=handler)
+
+    print(tabulate(table, headers=headers))
+
 
     while True:
         if handler.is_active_session():

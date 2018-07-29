@@ -2,16 +2,47 @@
 
 import datetime as dt
 from abc import ABC, abstractmethod
-from typing import Optional, NamedTuple, Tuple
+from typing import Optional, NamedTuple, Tuple, List
 
 
 class Record(NamedTuple):
+    """
+    A Record is a relatively permanent datum that represents a completed
+    time-tracking action.
+    """
     name: str
     start: dt.datetime
     end: dt.datetime
 
 
+class Day(List[Record]):
+    """
+    A collection of records that has a defined start and end datetime
+    """
+
+    def __init__(self, day_start: dt.datetime):
+        super().__init__()
+        self.day_start = day_start
+
+    @property
+    def work_start(self):
+        if len(self):
+            return self[0].start
+        return None
+
+    @property
+    def work_end(self):
+        if len(self):
+            return self[-1].end
+        return None
+
+
 class Session(NamedTuple):
+    """
+    A Session is a transient representation of the start of a time-tracking
+    action. In practice, this means the most current time-tracking action
+    that the user has initiated.
+    """
     name: str
     time_start: dt.datetime
     done_or_canceled: bool

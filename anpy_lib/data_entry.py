@@ -11,6 +11,13 @@ TEMP_SHEET_NAME = 'ANPY_TEMP_SHEET_DO_NOT_TOUCH'
 
 
 def enter_week_data(first: dt.datetime, handler: AbstractDataHandler, ws):
+    """
+    Assemble the current week's data from the data handler into columns and
+    insert it into the given worksheet
+    :param first: datetime of the first session of the week
+    :param handler: data handler to extract data from
+    :param ws: excel worksheet to add data to
+    """
     weekly_record_list = data_analysis.get_records_on_week(handler, first)
     dicts = [data_analysis.get_per_category_durations(r) for r in
              weekly_record_list]
@@ -19,6 +26,13 @@ def enter_week_data(first: dt.datetime, handler: AbstractDataHandler, ws):
 
 
 def make_cols(first: dt.datetime, weekly_record_list, dicts):
+    """
+    Create the data make the columns
+    :param first: the first
+    :param weekly_record_list:
+    :param dicts:
+    :return:
+    """
     starts, ends = get_time_started_ended(weekly_record_list)
     cc.DateColumn(first)
     cc.TimeStartedColumn(starts)
@@ -64,12 +78,28 @@ def get_data_column_data(dicts: List[Dict[str, float]]) \
 
 
 def get_most_recent_monday(datetime: dt.datetime = None):
+    return get_most_recent_day(1, dt.time(6, 0), datetime)
+    '''
     if not datetime:
         datetime = dt.datetime.today()
     datetime = datetime - dt.timedelta(hours=6) + dt.timedelta.resolution
     datetime = datetime - dt.timedelta(days=datetime.isoweekday() - 1)
     return dt.datetime.combine(datetime.date(), dt.time(6, 0))
+    '''
 
+
+# TODO move to data analysis
+def get_most_recent_day(isoweekday: int, time: dt.time = None,
+                        datetime: dt.datetime = None):
+    if not datetime:
+        datetime = dt.datetime.today()
+    if not time:
+        time = dt.time(6, 0)
+    datetime = datetime - dt.timedelta(
+        hours=time.hour) + dt.timedelta.resolution
+    datetime = datetime - dt.timedelta(
+        days=(datetime.isoweekday() - isoweekday) % 7)
+    return dt.datetime.combine(datetime.date(), dt.time(6, 0))
 
 def load_excel_workbook(path):
     try:
